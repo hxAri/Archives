@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script type="text/javascript" src="/sdcard/Project/Personal/Coding/Php/GGarden/assets/scripts/chartjs/dist/chart.umd.js"></script>
+		<script type="text/javascript" src="/sdcard/Project/Personal/Coding/Php/GGarden/assets/scripts/swiper/swiper-bundle.min.js"></script>
+		<script type="text/javascript" src="/sdcard/Project/Personal/Coding/Php/GGarden/assets/scripts/ggarden.chart.js"></script>
+		<script type="text/javascript" src="/sdcard/Project/Personal/Coding/Php/GGarden/assets/scripts/ggarden.swiper.js"></script>
+		<script type="text/javascript" src="/sdcard/Project/Personal/Coding/Php/GGarden/assets/scripts/ggarden.js"></script>
+		<script type="text/javascript" src="/sdcard/Project/Personal/Coding/Php/GGarden/assets/scripts/ggarden.index.js"></script>
+	</head>
+	<body>
+		<canvas id="canvas"></canvas>
+		<script type="text/javascript">
+			
+			// Canvas Element.
+			var canvas = document.getElementById( "canvas" );
+			
+			new Chart( canvas, $Chart.samples.pie( [ "V", "W", "X", "Y", "Z" ], [{ data: [ 2, 6, 7, 3, 8 ], backgroundColor: true }], {} ) );
+			x = function( y ) { alert( y ) };
+			x.bind( 0, 7 );
+			alert( is( new FormData() ) );
+		</script>
+	</body>
+</html>
+
+	<template> 
+	<!-image upload component-> 
+		<div> 
+			<input type = "file" id = "upload-ele" multiple = "false"	 
+			accept = "image / *" @ change = "uploadFile (url, quality, hasApi, BigUrl) "> 
+			<toast v-model =" total.isShow "type =" text "> {{total.text}} </ toast> 
+		</ div> 
+	</ template> 
+	<script> 
+	import {Indicator } from 'mint-ui'; 
+	import {Toast} from 'vux'; 
+	export default { 
+		name: 'uploadImage', 
+		components: { 
+			Indicator, 
+			Toast, 
+		}, 
+		props: { 
+			'url': String,// Little and 1M api 
+			'quality': Number, // Picture quality 
+			'BigUrl': { 
+				type: String,
+				default: '', 
+			}, // api for images larger than 1M 
+			'hasApi': { 
+				type: Boolean, 
+				default: false 
+			} // Whether to assign an interface to images larger than 1M 
+		}, 
+		data () { 
+			return { 
+				total: {isShow : false, text: ""} 
+			} 
+		}, 
+		methods: { 
+			uploadFile (url, quality, hasApi, BigUrl) { 
+				Indicator.open (`Uploading`); 
+				// files is a built-in object after input is set to file. The files object is a read-only property and cannot be modified. 
+				var oFile = document.getElementById ('upload-ele'). files [0]; 
+				console.log ('File Object', oFile); 
+				var form = new FormData (); 
+				// If the size is greater than 1M, the new compression processing
+				// console.log ('File Size Unit: KB', (oFile.size / 1024)) 
+				if ((oFile.size / 1024)> 1024) { 
+					if (hasApi) {	 
+						form.append ('file', oFile) ; 
+						let xhr = new XMLHttpRequest (); // XMLHttpRequest Object 
+						xhr.open ('post', BigUrl, true); 
+						// Method: post, url: server receive address, true / false isAsync 
+						xhr.timeout = 30 * 1000; // Timeout one minute; 
+						xhr.ontimeout = this.uploadTimeout; // Upload Timeout Function 
+						xhr.upload.onprogress = this.progress; // Progress Function 
+						xhr.onload = this.uploadComplete; // Upload Success Function 
+						xhr.onerror = this.uploadFailed;// Upload Failed Funciton
+						xhr.upload.onloadstart = () => { 
+							let date = new Date (). getTime (); // TimeStamp Prevents Caching 
+							let initSize = 0; // Init File Size Zero 
+						} // Upload Start 
+						xhr.send (form) ; 
+					} else { 
+						this.imgCompress (oFile, {quality: quality}, 
+						(base64Codes) => { 
+							var bl = this.convertBase64UrlToBlob (base64Codes); 
+							form.append ("file", bl, "file_" + Date.parse ( new Date ()) + ".jpg"); 
+							// file object 
+							console.log (form); 
+							let xhr = new XMLHttpRequest (); // XMLHttpRequest object 
+							xhr.open ("post", url, true);
+							// post method, url is the server request address, true This parameter specifies whether the request is processed asynchronously. 
+							xhr.upload.onprogress = this.progress; // Progress Function 
+							xhr.ontimeout = this.uploadTimeout; // Upload Timeout Function 
+							xhr.onload = this.uploadComplete; // Upload Success Function 
+							xhr.onerror = this.uploadFailed; // Upload Failed Funciton 
+							xhr.upload.onloadstart = function () { 
+								let ot = new Date (). GetTime (); // TimeStamp Prevents Caching 
+								let oloaded = 0; // Init File Size Zero 
+							}; // Upload Start 
+							xhr.send (form); 
+						}) 
+					} 
+				} else { 
+					// small and 1M
+					form.append ('file', oFile); 
+					let xhr = new XMLHttpRequest (); // XMLHttpRequest Object 
+					xhr.open ('post', url, true); 
+					// Method: post, url: server receive address, true / false isAsync 
+					xhr.timeout = 30 * 1000; // Timeout one minute; 
+					xhr.ontimeout = this.uploadTimeout; // Upload Timeout Function 
+					xhr.upload.onprogress = this.progress; // Progress Function 
+					xhr.onload = this.uploadComplete ; // Upload Success Function 
+					xhr.onerror = this.uploadFailed; // Upload Failed Funciton 
+					xhr.upload.onloadstart = () => { 
+						let date = new Date (). GetTime (); // TimeStamp Prevents Caching
+						let initSize = 0; // Init File Size Zero 
+					} // Upload Start 
+					xhr.send (form); 
+				} 
+			}, 
+			/ ** 
+			 * @description Request Success 
+			 * / 
+			uploadComplete (evt) { 
+				let res = JSON.parse (evt. target.responseText); 
+				if (evt.target.readyState == 4 && evt.target.status == 200) { 
+					this. $ emit ('upload', res.result.url); 
+				} else { 
+					this.uploadFailed () ; 
+				} 
+			}, 
+			/ ** 
+			 * @description Request Failed 
+			 * / 
+			uploadFailed (evt) { 
+				Indicator.close ();
+				this.total = { 
+					isShow: true, 
+					text: "Upload failed" 
+				} 
+			},	 
+		/ **	 
+		 * @description Timeout Function	 
+		 * /	 
+		uploadTimeout (evt) {	 
+			this.cancleUploadFile (evt)	 
+			Indicator.close ();	 
+			this.total = {	 
+				isShow: true,	 
+				text: "Request timed out"	 
+			}	 
+		},	 
+		/ ** e	 
+		 * @description Upload Cancel	 
+		 * /	 
+		cancleUploadFile (evt) {	 
+			evt.abort ();	 
+		},	 
+		/ **	 
+		 * @description Requst Loading ....	 
+		 * /
+		progress (progressEvent) {	 
+			if (! progressEvent.lengthComputable) {	 
+				this.total = {	 
+					isShow: true,	 
+					text: "Progress read failed"	 
+				}	 
+				return false;	 
+			}	 
+			let precent = Math.floor (100 * progressEvent.loaded / progressEvent. total); 
+			// Upload Progress	 
+			if (precent <100) {	 
+				Indicator.open (`$ {precent}%`);	 
+			} else {	 
+				Indicator.close ();	 
+				this.total = {		 
+					isShow: true,	 
+					text: " Upload successful "	 
+				}	 
+			}	 
+		},	 
+		/ **	 
+			* @description image compression
+			* @param {Object} file compressed file	 
+			* @param {Number} width Compresses the width of the back end. The smaller the width, the smaller the bytes.	 
+			* /	 
+		imgCompress (file, width, callBack) {	 
+			var ready = new FileReader ();	 
+			ready .readAsDataURL (file);	 
+			ready.onload = () => {	 
+				this.canvasDataURL (ready.result, width, callBack);	 
+			}			 
+		},	 
+		/ **	 
+		 * Convert base64 image url data to Blob	 
+		 * @param urlData	 
+		 * Base64 image data expressed in URL method	 
+		 * /	 
+		convertBase64UrlToBlob (urlData) {	 
+			var arr = urlData.split (","),	 
+				mime = arr [0] .match (/: (. *?); /) [1],	 
+				bstr = atob (arr [1]),
+				n = bstr.length,	 
+				u8arr = new Uint8Array (n);	 
+			while ( n-- ) {
+				u8arr [n] = bstr.charCodeAt (n);	 
+			}	 
+			return new Blob ([u8arr], {type: mime});	 
+		} ,		 
+		/ **	 
+		 * @description images larger than 1M are redrawn and compressed	 
+		 * /	 
+		canvasDataURL (path, obj, callback) {	 
+			var img = new Image ();	 
+			img.src = path;	 
+			img.onload = () => {	 
+				/ / var that = this;	 
+				// default compression	 
+				var w = this.width,	 
+					h = this.height,	 
+					scale = w / h;	 
+				w = obj.width | w;
+				h = obj.height || w / scale;	 
+				var quality = 0.7; // default image quality is 0.7	 
+				// generate canvas	 
+				var canvas = document.createElement ("canvas");	 
+				var ctx = canvas.getContext ("2d") ;	 
+				// create attribute node	 
+				var anw = document.createAttribute ("width");	 
+				anw.nodeValue = w;	 
+				var anh = document.createAttribute ("height");	 
+				anh.nodeValue = h;	 
+				canvas.setAttributeNode (anw);	 
+				canvas .setAttributeNode (anh);	 
+				ctx.drawImage (img, 0, 0, w, h);	 
+				// image quality	 
+				if (obj.quality && obj.quality <= 1 && obj.quality>	0) { 
+					quality = obj.quality;
+				}	 
+				// The smaller the quality value, the blurry the drawn image	 
+				var base64 = canvas.toDataURL ("image / jpeg", quality);	 
+				// The callback function returns the value of	 
+				base64 callback (base64);	 
+			};	 
+		},	 
+	}	 
+}	 
+</ script>	 
+<style scoped>	 
+	.upload-wraper {	 
+		width: 100%;	 
+		height: 100%;	 
+	}	 
+</ style>

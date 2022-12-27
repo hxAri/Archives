@@ -1,0 +1,22 @@
+{
+    "name": "hxari/ggarden",
+    "description": "This is a school project.",
+    "type": "project",
+    "license": "MIT",
+    "autoload": {
+    	"files": [
+    		"system/helper.php"
+    	],
+        "psr-4": {
+            "hxAri\\GGarden\\": "system/"
+        }
+    },
+    "authors": [
+        {
+            "name": "hxAri",
+            "email": "ari160824@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {}
+}
